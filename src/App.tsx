@@ -6,6 +6,7 @@ import {
   type FeatureCell,
 } from "./components/FeatureShowcaseScroll";
 import { HeroGridCrossfade } from "./components/HeroGridCrossfade";
+import { OpenSourceTechLogos } from "./components/OpenSourceTechLogos";
 
 const githubPillClassName =
   "border-border text-fg-muted hover:border-[rgba(8,9,10,0.15)] hover:bg-hover hover:text-fg-secondary inline-flex cursor-pointer items-center gap-2 rounded-[99px] border bg-transparent px-2.5 py-2 text-sm transition-colors duration-200 no-underline [&_svg]:shrink-0 [&_svg]:text-current";
@@ -275,42 +276,26 @@ export default function App() {
 
       <section
         id="open-source"
-        className="flex w-full max-w-[1080px] flex-col items-start gap-6 px-4 py-16 sm:px-6 md:px-8 lg:px-10 max-md:py-12"
+        className="flex w-full max-w-[1080px] flex-col items-center gap-6 px-4 py-16 text-center sm:px-6 md:px-8 lg:px-10 max-md:py-12"
       >
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col items-center gap-3">
           <p className="text-fg-muted bg-border-subtle inline-block w-fit rounded-full px-2.5 py-1 text-xs tracking-[-0.01em]">
             Open source
           </p>
           <h2 className="text-fg text-2xl leading-[1.2] tracking-[-0.02em] max-md:text-xl">
             Built in the open
           </h2>
-          <p className="text-fg-secondary max-w-[640px] text-base leading-[1.35] tracking-[-0.01em]">
+          <p className="text-fg-secondary mx-auto max-w-[640px] text-base leading-[1.35] tracking-[-0.01em]">
             Newsphere is developed in public—you can inspect the code, file
-            issues, and follow along as the app evolves.
+            issues, and follow along as the app evolves. Want to help?
+            Contributions are welcome—open a pull request, pick up an issue, or
+            suggest an improvement.
           </p>
         </div>
-        <ul className="text-fg-secondary flex w-full max-w-[640px] list-none flex-col gap-3 text-base leading-tight tracking-[-0.01em]">
-          {[
-            "React and TypeScript for the interface",
-            "Vite for fast local development and production builds",
-            "Tauri 2 for a native desktop shell with a small footprint",
-            "Rust in the backend for system integration and performance",
-            "Tailwind CSS for a consistent, themeable design system",
-          ].map((line) => (
-            <li key={line} className="flex gap-3">
-              <span className="text-fg-muted mt-[0.35em] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
-        <a
-          href={GITHUB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-fg-secondary text-sm underline-offset-4 transition-colors hover:text-fg hover:underline"
-        >
-          View the repository on GitHub
-        </a>
+        <OpenSourceTechLogos />
+        <div className="flex w-full justify-center">
+          <GitHubPillLink />
+        </div>
       </section>
 
       <section className="flex w-full max-w-[1080px] flex-col items-center gap-3 overflow-visible px-4 pt-8 pb-16 sm:px-6 md:px-8 lg:px-10 max-md:pb-12">
