@@ -78,6 +78,9 @@ export function BackgroundVideoLayer({
         filter: `url(#${NS_DITHER_FILTER_ID})`,
         WebkitFilter: `url(#${NS_DITHER_FILTER_ID})`,
         imageRendering: "pixelated",
+        // Stable compositor layer — reduces scroll flicker with SVG filters on video.
+        transform: "translateZ(0)",
+        backfaceVisibility: "hidden",
         ...(mode === "still" ? { objectPosition: stillObjectPosition } : {}),
       }}
       src={BACKGROUND_VIDEO_SRC}

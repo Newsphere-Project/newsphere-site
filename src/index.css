@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
 @layer base {
+  /* Snap so the first rest after the hero has the image fully scrolled away (features top = viewport top). */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-snap-type: y proximity;
+    }
+
+    #hero {
+      scroll-snap-align: start;
+    }
+
+    #features {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+  }
+
   body {
     @apply font-sans font-normal antialiased leading-snug;
   }

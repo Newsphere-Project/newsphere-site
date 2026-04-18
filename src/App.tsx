@@ -1,9 +1,11 @@
 import { useEffect, useState, type SVGProps } from "react";
 import { DOWNLOAD_URLS, GITHUB_URL } from "./config";
 import { DitherFilterDefs } from "./components/DitherFilterDefs";
-import { ExpandableFeaturePreview } from "./components/ExpandableFeaturePreview";
+import {
+  FeatureShowcaseScroll,
+  type FeatureCell,
+} from "./components/FeatureShowcaseScroll";
 import { HeroGridCrossfade } from "./components/HeroGridCrossfade";
-import { MediaPlaceholder } from "./components/MediaPlaceholder";
 
 const githubPillClassName =
   "border-border text-fg-muted hover:border-[rgba(8,9,10,0.15)] hover:bg-hover hover:text-fg-secondary inline-flex cursor-pointer items-center gap-2 rounded-[99px] border bg-transparent px-2.5 py-2 text-sm transition-colors duration-200 no-underline [&_svg]:shrink-0 [&_svg]:text-current";
@@ -27,6 +29,37 @@ function GitHubIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+function AppleLogoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 814 1000"
+      fill="currentColor"
+      aria-hidden
+      className="text-fg h-3.5 w-auto shrink-0"
+      {...props}
+    >
+      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
+    </svg>
+  );
+}
+
+function WindowsLogoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 21 21"
+      fill="currentColor"
+      aria-hidden
+      className="text-fg size-3.5 shrink-0"
+      {...props}
+    >
+      <path d="M0 0h10v10H0z" />
+      <path d="M11 0h10v10H11z" />
+      <path d="M0 11h10v10H0z" />
+      <path d="M11 11h10v10H11z" />
+    </svg>
+  );
+}
+
 function GitHubPillLink() {
   return (
     <a
@@ -42,18 +75,17 @@ function GitHubPillLink() {
   );
 }
 
-type FeatureCell = {
-  title: string;
-  body: string;
-  image: string;
-  /** Frozen background frame for this card (distinct per preview). */
-  videoFrameSec: number;
-  /** Distinct crop for the still frame (CSS `object-position`). */
-  videoObjectPosition: string;
-};
-
 /** Newest reader hero asset in /public/images (filename from macOS screenshot). */
 const READER_SECTION_IMAGE = `/images/${encodeURIComponent("Screenshot 2026-04-17 at 8.15.45\u202fPM.png")}`;
+
+const READER_SHOWCASE = {
+  imageSrc: READER_SECTION_IMAGE,
+  label: "Article open in the reader with navigation and actions above the text",
+  title: "Reader",
+  body: "Full articles in a centered column—minimal chrome, quiet type, and a toolbar that stays out of the text.",
+  videoFrameSec: 0,
+  videoObjectPosition: "50% 42%",
+};
 
 const FEATURE_ROWS: FeatureCell[][] = [
   [
@@ -124,14 +156,14 @@ export default function App() {
   }, [expanded]);
 
   return (
-    <div className="text-fg mx-auto flex w-full flex-col items-center gap-8 bg-[linear-gradient(180deg,#fff_0%,var(--color-offwhite)_100%)] px-4 sm:px-6 md:px-8 lg:px-10">
+    <div className="text-fg mx-auto flex w-full flex-col items-center gap-0 bg-[linear-gradient(180deg,#fff_0%,var(--color-offwhite)_100%)]">
       <DitherFilterDefs />
       <section
         id="hero"
-        className="flex w-full flex-col items-center gap-12 pt-20 pb-12 max-md:gap-6 max-md:pt-16 max-md:pb-12"
+        className="flex min-h-screen w-full flex-col items-center px-4 pt-20 sm:px-6 md:px-8 lg:px-10 max-md:pt-16"
       >
-        <div className="flex w-full flex-col items-center justify-center gap-16 max-md:gap-[88px]">
-          <div className="flex w-full max-w-[1080px] flex-col items-center gap-6 text-center max-md:gap-8">
+        <div className="flex w-full max-w-[1400px] flex-1 flex-col justify-between gap-8 max-md:gap-6">
+          <div className="mx-auto flex w-full max-w-[1080px] flex-col items-center gap-6 text-center max-md:gap-8">
             <nav className="flex w-full items-center justify-center">
               <a
                 href="/"
@@ -173,7 +205,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex w-full max-w-[1400px] flex-col items-center max-lg:max-w-full">
+          <div className="flex w-full flex-col items-center max-lg:max-w-full">
             <HeroGridCrossfade className="max-w-full" />
           </div>
         </div>
@@ -181,70 +213,20 @@ export default function App() {
 
       <div
         id="features"
-        className="flex w-full max-w-[1440px] flex-col items-center gap-12 overflow-clip py-16 max-md:gap-12 max-md:py-12"
+        className="flex w-full flex-col items-center gap-0 pb-8 max-md:pb-6"
+        aria-labelledby="features-heading"
       >
-        <section className="mb-4 flex w-full flex-col items-center gap-3 overflow-hidden p-0">
-          <div className="flex w-full max-w-[1080px] flex-col items-start gap-4 text-left">
-            <div className="flex w-full flex-col items-start gap-3">
-              <p className="text-fg-muted bg-border-subtle inline-block rounded-full px-2.5 py-1 text-xs tracking-[-0.01em]">
-                Reader
-              </p>
-              <h2 className="text-fg text-2xl leading-[1.2] tracking-[-0.02em] max-md:text-xl">
-                Full articles in a centered column—minimal chrome, quiet type, and a toolbar that stays out of the text.
-              </h2>
-            </div>
-          </div>
-          <div className="mt-2 w-full max-w-[1080px]">
-            <MediaPlaceholder
-              backgroundVideoFrameSec={0}
-              backgroundVideoObjectPosition="50% 42%"
-              imageSrc={READER_SECTION_IMAGE}
-              label="Article open in the reader with navigation and actions above the text"
-            />
-          </div>
-        </section>
-
-        <div className="flex w-full max-w-[1080px] flex-col items-start gap-2">
-          <h2 className="text-fg text-2xl leading-[1.2] tracking-[-0.02em] max-md:text-xl">
-            How your grid, feeds, bookmarks, and sources connect in one reader.
-          </h2>
-        </div>
-
-        {FEATURE_ROWS.map((row, rowIndex) => (
-          <section key={rowIndex} className="flex w-full justify-center">
-            <div className="flex w-full max-w-[1080px] flex-row gap-9 max-lg:flex-col max-md:flex-col">
-              {row.map((item) => (
-                <div
-                  key={item.title}
-                  className="flex flex-1 flex-col items-center gap-4 max-lg:w-full max-lg:flex-none max-md:w-full max-md:flex-none"
-                >
-                  <ExpandableFeaturePreview
-                    backgroundVideoFrameSec={item.videoFrameSec}
-                    backgroundVideoObjectPosition={item.videoObjectPosition}
-                    imageSrc={item.image}
-                    title={item.title}
-                    onExpand={() =>
-                      setExpanded({ src: item.image, title: item.title })
-                    }
-                  />
-                  <div className="flex w-full flex-col items-start gap-1.5 px-1">
-                    <h3 className="text-fg text-lg leading-tight tracking-[-0.02em] max-md:text-base">
-                      {item.title}
-                    </h3>
-                    <p className="text-fg-muted text-base leading-tight break-words">
-                      {item.body}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
+        <FeatureShowcaseScroll
+          sectionTitle="A news reader designed to keep focus and reduce distractions."
+          reader={READER_SHOWCASE}
+          features={FEATURE_ROWS.flat()}
+          onExpand={(src, title) => setExpanded({ src, title })}
+        />
       </div>
 
       <section
         id="downloads"
-        className="flex w-full max-w-[1080px] flex-col items-center gap-8 pt-8 pb-16"
+        className="-mt-4 flex w-full max-w-[1080px] flex-col items-center gap-8 px-4 pt-0 pb-16 sm:px-6 md:px-8 lg:px-10"
       >
         <h2 className="text-fg text-center text-2xl leading-none tracking-[-0.01em]">
           Download
@@ -255,7 +237,8 @@ export default function App() {
             href={DOWNLOAD_URLS.macos}
             className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
           >
-            <span className="text-fg-muted bg-hover inline-block w-fit rounded-full px-2.5 py-1 text-sm">
+            <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
+              <AppleLogoIcon />
               macOS
             </span>
             <span className="text-fg text-lg">Apple Silicon & Intel</span>
@@ -267,7 +250,8 @@ export default function App() {
             href={DOWNLOAD_URLS.windows}
             className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
           >
-            <span className="text-fg-muted bg-hover inline-block w-fit rounded-full px-2.5 py-1 text-sm">
+            <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
+              <WindowsLogoIcon />
               Windows
             </span>
             <span className="text-fg text-lg">Windows 10 & 11</span>
@@ -291,7 +275,7 @@ export default function App() {
 
       <section
         id="open-source"
-        className="flex w-full max-w-[1080px] flex-col items-start gap-6 py-16 max-md:py-12"
+        className="flex w-full max-w-[1080px] flex-col items-start gap-6 px-4 py-16 sm:px-6 md:px-8 lg:px-10 max-md:py-12"
       >
         <div className="flex w-full flex-col gap-3">
           <p className="text-fg-muted bg-border-subtle inline-block w-fit rounded-full px-2.5 py-1 text-xs tracking-[-0.01em]">
@@ -329,15 +313,32 @@ export default function App() {
         </a>
       </section>
 
-      <section className="flex w-full max-w-[1080px] flex-col items-center gap-3 overflow-visible pt-8 pb-16 max-md:pb-12">
-        <p className="text-fg-secondary max-w-full text-center text-2xl leading-[1.15] tracking-[-0.03em] max-lg:text-[22px] max-md:text-[20px]">
+      <section className="flex w-full max-w-[1080px] flex-col items-center gap-3 overflow-visible px-4 pt-8 pb-16 sm:px-6 md:px-8 lg:px-10 max-md:pb-12">
+        <p className="text-fg-secondary max-w-full text-center text-4xl leading-[1.1] tracking-[-0.035em] max-lg:text-3xl max-md:text-2xl">
           The feed is endless.
           <br />
-          Your reading doesn't have to be.
+          But your attention isn’t.
         </p>
       </section>
 
-      <footer className="bg-hover -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] md:-mx-8 md:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)] py-6 max-md:py-4">
+      <section className="flex w-full max-w-[1080px] flex-col items-center px-4 pb-4 pt-2 sm:px-6 md:px-8 lg:px-10">
+        <a
+          href="/"
+          className="text-fg focus-visible:ring-fg/25 block rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          aria-label="Newsphere home"
+        >
+          <img
+            src="/logo.svg"
+            alt=""
+            width={1024}
+            height={1024}
+            className="block h-auto w-[min(20rem,78vw)] max-w-full sm:w-[min(24rem,70vw)] md:w-[min(28rem,60vw)]"
+            draggable={false}
+          />
+        </a>
+      </section>
+
+      <footer className="bg-hover w-full py-6 max-md:py-4">
         <div className="mx-auto flex w-full max-w-[1080px] items-center justify-between px-4 sm:px-6 md:px-8 lg:px-10 max-md:flex-col max-md:items-center max-md:gap-3">
           <p className="text-fg-muted text-sm">
             © {new Date().getFullYear()} Newsphere

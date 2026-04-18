@@ -14,9 +14,15 @@ export function DitherFilterDefs() {
   useLayoutEffect(() => {
     const setDitherImageSizesToPixelRatio = () => {
       const size = 8 / window.devicePixelRatio;
+      const w = String(size);
       document.querySelectorAll(`feImage[data-dither-tile]`).forEach((el) => {
-        el.setAttribute("width", String(size));
-        el.setAttribute("height", String(size));
+        // Skip if unchanged: resize often fires when scrolling (e.g. mobile URL bar)
+        // without DPR changing; touching feImage invalidates the filter and flickers video.
+        if (el.getAttribute("width") === w && el.getAttribute("height") === w) {
+          return;
+        }
+        el.setAttribute("width", w);
+        el.setAttribute("height", w);
       });
     };
 
