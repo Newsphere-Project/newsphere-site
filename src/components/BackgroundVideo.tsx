@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { NS_DITHER_FILTER_ID } from "./DitherFilterDefs";
 
 /** Shared hero / card background clip (replaces static sky.jpg). */
@@ -19,6 +19,16 @@ export type BackgroundVideoLayerProps = {
   stillObjectPosition?: string;
 };
 
+/**
+ * Background video layer that can either loop continuously (`mode="loop"`) or
+ * stay paused on a fixed frame (`mode="still"`).
+ *
+ * Implementation split into two independent effects so runtime mode flips
+ * don't race with seeks:
+ *   1) Initial still-frame seek — seeks `stillTimeSec` exactly once (and again
+ *      only if `stillTimeSec` itself changes).
+ *   2) Play/pause on mode flip — a single imperative `play()` or `pause()`.
+ */
 export function BackgroundVideoLayer({
   mode = "loop",
   stillTimeSec = 0,
@@ -26,22 +36,9 @@ export function BackgroundVideoLayer({
 }: BackgroundVideoLayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useLayoutEffect(() => {
-    if (mode !== "loop") return;
-    const el = videoRef.current;
-    if (!el) return;
-
-    const applyRate = () => {
-      el.playbackRate = BACKGROUND_VIDEO_PLAYBACK_RATE;
-    };
-
-    applyRate();
-    el.addEventListener("loadedmetadata", applyRate);
-    return () => el.removeEventListener("loadedmetadata", applyRate);
-  }, [mode]);
-
-  useLayoutEffect(() => {
-    if (mode !== "still") return;
+  // 1) Seek to the desired still frame once after metadata loads. Never seeks
+  //    again during runtime mode flips — prevents racing with pending play().
+  useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
 
@@ -51,24 +48,36 @@ export function BackgroundVideoLayer({
         Number.isFinite(dur) && dur > 0
           ? Math.min(Math.max(0, stillTimeSec), Math.max(0, dur - 0.05))
           : Math.max(0, stillTimeSec);
-      el.pause();
       el.currentTime = target;
     };
 
-    const onSeeked = () => {
-      el.pause();
-    };
-
-    el.addEventListener("loadedmetadata", applySeek);
-    el.addEventListener("seeked", onSeeked);
     if (el.readyState >= HTMLMediaElement.HAVE_METADATA) {
       applySeek();
+      return;
     }
+    el.addEventListener("loadedmetadata", applySeek, { once: true });
     return () => {
       el.removeEventListener("loadedmetadata", applySeek);
-      el.removeEventListener("seeked", onSeeked);
     };
-  }, [mode, stillTimeSec]);
+  }, [stillTimeSec]);
+
+  // 2) Apply play/pause on mode change. Safe to call regardless of readyState;
+  //    play() resolves once the video can play, and we swallow AbortError
+  //    triggered by rapid pause/play toggles.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+
+    if (mode === "loop") {
+      el.playbackRate = BACKGROUND_VIDEO_PLAYBACK_RATE;
+      void el.play().catch(() => {});
+      return;
+    }
+    // still: pause wherever the loop left off. Do not seek here — the initial
+    // seek effect already positioned the frame once; changing it per toggle
+    // creates races.
+    el.pause();
+  }, [mode]);
 
   return (
     <video
@@ -88,7 +97,7 @@ export function BackgroundVideoLayer({
       playsInline
       loop={mode === "loop"}
       autoPlay={mode === "loop"}
-      preload={mode === "still" ? "auto" : undefined}
+      preload="auto"
       aria-hidden
     />
   );
