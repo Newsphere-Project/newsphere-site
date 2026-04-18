@@ -28,6 +28,8 @@ type FeatureShowcaseScrollProps = {
 };
 
 const WHEEL_TO_PROGRESS = 0.0012;
+/** Pixels: treat scrollY as aligned with the pin when within this of `pinScrollY`. */
+const PIN_SCROLL_EPSILON = 2;
 
 export function FeatureShowcaseScroll({
   sectionTitle,
@@ -43,8 +45,7 @@ export function FeatureShowcaseScroll({
   const txFirstRef = useRef(0);
   const txLastRef = useRef(0);
   const horizontalProgressRef = useRef(0);
-  const horizontalCompleteRef = useRef(false);
-  /** Max `scrollY` allowed until horizontal scrub finishes (last card centered). */
+  /** `scrollY` pinned while horizontal scrub is mid-flight (0 < p < 1). */
   const scrollLockYRef = useRef<number | null>(null);
 
   const measureTxRange = useCallback(() => {
@@ -76,16 +77,6 @@ export function FeatureShowcaseScroll({
     (p: number) => {
       const clamped = Math.min(1, Math.max(0, p));
       horizontalProgressRef.current = clamped;
-      if (clamped >= 1) {
-        horizontalCompleteRef.current = true;
-        setTx(txFromProgress(1));
-        return;
-      }
-      if (clamped <= 0) {
-        horizontalCompleteRef.current = false;
-        setTx(txFromProgress(0));
-        return;
-      }
       setTx(txFromProgress(clamped));
     },
     [txFromProgress],
@@ -102,7 +93,7 @@ export function FeatureShowcaseScroll({
 
       if (reduceMotion.matches) {
         measureTxRange();
-        horizontalCompleteRef.current = true;
+        horizontalProgressRef.current = 1;
         setTx(txLastRef.current);
         return;
       }
@@ -113,29 +104,31 @@ export function FeatureShowcaseScroll({
 
       if (!inSticky) {
         scrollLockYRef.current = null;
-        if (rect.top > 0) {
-          horizontalCompleteRef.current = false;
-          horizontalProgressRef.current = 0;
-          measureTxRange();
-          setTx(txFromProgress(0));
-        }
+        // Do not reset progress when off-screen (e.g. scrolling back up); only remeasure on resize.
         return;
       }
 
-      if (horizontalCompleteRef.current) {
+      const p = horizontalProgressRef.current;
+
+      if (p >= 1 - 1e-6) {
         scrollLockYRef.current = null;
         setTx(txFromProgress(1));
         return;
       }
 
-      const y = window.scrollY;
-      if (scrollLockYRef.current === null) {
-        scrollLockYRef.current = y;
-      } else if (y > scrollLockYRef.current) {
-        window.scrollTo({ top: scrollLockYRef.current, left: 0, behavior: "instant" });
+      // Pin vertical scroll while horizontal scrub is mid-flight (either direction).
+      if (p > 0 && p < 1) {
+        const y = window.scrollY;
+        if (scrollLockYRef.current === null) {
+          scrollLockYRef.current = y;
+        } else if (y !== scrollLockYRef.current) {
+          window.scrollTo({ top: scrollLockYRef.current, left: 0, behavior: "instant" });
+        }
+      } else {
+        scrollLockYRef.current = null;
       }
 
-      setTx(txFromProgress(horizontalProgressRef.current));
+      setTx(txFromProgress(p));
     };
 
     const schedule = () => {
@@ -151,21 +144,34 @@ export function FeatureShowcaseScroll({
       const vh = window.innerHeight;
       const inSticky = rect.top <= 0 && rect.bottom > vh * 0.25;
       if (!inSticky) return;
-      if (horizontalCompleteRef.current) return;
 
       const p = horizontalProgressRef.current;
+      const dy = e.deltaY;
+      if (dy === 0) return;
 
-      if (e.deltaY > 0 && p < 1) {
+      const pinScrollY = rect.top + window.scrollY;
+      const scrollY = window.scrollY;
+      const atEnd = p >= 1 - 1e-6;
+
+      if (dy > 0 && p < 1) {
         e.preventDefault();
-        applyProgress(p + e.deltaY * WHEEL_TO_PROGRESS);
-      } else if (e.deltaY < 0 && p > 0) {
+        applyProgress(p + dy * WHEEL_TO_PROGRESS);
+        return;
+      }
+
+      if (dy < 0 && p > 0) {
+        // At the end: move the page up until the pin, then reverse the row.
+        if (atEnd && scrollY > pinScrollY + PIN_SCROLL_EPSILON) {
+          return;
+        }
         e.preventDefault();
-        applyProgress(p + e.deltaY * WHEEL_TO_PROGRESS);
+        applyProgress(p + dy * WHEEL_TO_PROGRESS);
       }
     };
 
     const onResize = () => {
       measureTxRange();
+      setTx(txFromProgress(horizontalProgressRef.current));
       schedule();
     };
 
