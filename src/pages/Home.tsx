@@ -1,5 +1,6 @@
 import { useEffect, useState, type SVGProps } from "react";
 import { DOWNLOAD_URLS, GITHUB_URL } from "../config";
+import { BetaBadge } from "../components/BetaBadge";
 import { DitherFilterDefs } from "../components/DitherFilterDefs";
 import {
   FeatureShowcaseScroll,
@@ -170,7 +171,7 @@ export default function Home() {
               <a
                 href="/"
                 className="text-fg flex items-center gap-2 no-underline outline-none focus:outline-none focus-visible:outline-none"
-                aria-label="Newsphere home"
+                aria-label="Newsphere home, beta"
               >
                 <img
                   src="/logo.svg"
@@ -182,6 +183,7 @@ export default function Home() {
                 <span className="font-serif text-3xl italic tracking-[-0.02em] max-md:text-2xl">
                   Newsphere
                 </span>
+                <BetaBadge size="hero" />
               </a>
             </nav>
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { BetaBadge } from "./BetaBadge";
 import { SiteFooter } from "./SiteFooter";
 
 type PageShellProps = {
@@ -29,7 +30,7 @@ export function PageShell({ title, eyebrow, lede, children }: PageShellProps) {
         <div className="flex w-full max-w-[1080px] items-center justify-between">
           <Link
             to="/"
-            aria-label="Newsphere home"
+            aria-label="Newsphere home, beta"
             className="text-fg flex items-center gap-2 no-underline outline-none focus:outline-none focus-visible:outline-none"
           >
             <img
@@ -42,6 +43,7 @@ export function PageShell({ title, eyebrow, lede, children }: PageShellProps) {
             <span className="font-serif text-2xl italic tracking-[-0.02em] max-md:text-xl">
               Newsphere
             </span>
+            <BetaBadge />
           </Link>
         </div>
       </header>

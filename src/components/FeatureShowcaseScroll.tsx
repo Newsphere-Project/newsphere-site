@@ -29,7 +29,16 @@ type FeatureShowcaseScrollProps = {
   scrollHintSuppressed?: boolean;
 };
 
-const WHEEL_TO_PROGRESS = 0.0012;
+/** Maps vertical wheel distance to horizontal scrub progress (0–1). Lower = slower. */
+const WHEEL_TO_PROGRESS = 0.0002;
+
+/**
+ * Max |vertical wheel delta| (in CSS pixels) applied per event while scrubbing
+ * the horizontal row. Fast trackpad flings can report 400+ px/event; that jumps
+ * progress and fights pin clamping — cap keeps motion smooth.
+ */
+const MAX_WHEEL_DELTA_Y_PX = 26;
+
 /** Pixels: treat scrollY as aligned with the pin when within this of `pinScrollY`. */
 const PIN_SCROLL_EPSILON = 2;
 
@@ -113,6 +122,17 @@ function warpProgress(p: number, numAnchors: number): number {
  * blending smoothly up to `1` by `ANCHOR_RESISTANCE_RADIUS * segmentLength`
  * away from the nearest anchor.
  */
+/** Normalize wheel delta to CSS pixels, then clamp magnitude for scrubbing. */
+function clampScrubWheelDeltaY(e: WheelEvent): number {
+  let d = e.deltaY;
+  if (e.deltaMode === 1) d *= 16;
+  else if (e.deltaMode === 2) d *= typeof window !== "undefined" ? window.innerHeight : 600;
+  const cap = MAX_WHEEL_DELTA_Y_PX;
+  if (d > cap) return cap;
+  if (d < -cap) return -cap;
+  return d;
+}
+
 function anchorResistanceMultiplier(p: number, numAnchors: number): number {
   if (numAnchors < 2) return 1;
   const clamped = Math.max(0, Math.min(1, p));
@@ -477,7 +497,7 @@ export function FeatureShowcaseScroll({
       if (!inSticky) return;
 
       const p = horizontalProgressRef.current;
-      const dy = e.deltaY;
+      const dy = clampScrubWheelDeltaY(e);
       if (dy === 0) return;
 
       const pinScrollY = rect.top + window.scrollY;
