@@ -54,6 +54,22 @@ const CENTERED_ENTER_RATIO = 0.2;
 const CENTERED_EXIT_RATIO = 0.35;
 
 /**
+ * After the user stops scrolling for this many ms, the row snaps to the nearest
+ * card anchor. Short enough to feel responsive, long enough not to fight a
+ * trackpad user who's still actively scrubbing.
+ */
+const SNAP_IDLE_MS = 140;
+
+/**
+ * Duration of the snap-to-anchor animation, in ms. Ease-out cubic is used so
+ * the row settles gently rather than decelerating abruptly.
+ */
+const SNAP_DURATION_MS = 260;
+
+/** Ignore snaps that would move progress less than this (already at anchor). */
+const SNAP_MIN_DELTA = 1e-4;
+
+/**
  * Smoothly warp a linear scrub progress so that card-centered anchor points
  * (`i / (numAnchors - 1)`) act as "sticky" positions: near an anchor the
  * horizontal motion slows, between anchors it accelerates. Anchor values are
@@ -192,6 +208,15 @@ export function FeatureShowcaseScroll({
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     /**
+     * Snap-to-anchor state. When the user stops scrolling for `SNAP_IDLE_MS`,
+     * the row eases to the nearest card anchor over `SNAP_DURATION_MS`. Any
+     * new scrub input cancels the pending idle timer and any running animation,
+     * so the user never has to fight the snap.
+     */
+    let snapRafId: number | null = null;
+    let snapIdleTimeoutId: number | null = null;
+
+    /**
      * Keep scrollY pinned to the track top until horizontal scrub finishes (p === 1).
      *
      * Runs synchronously on every scroll (capture phase) so fast flings that overshoot
@@ -255,6 +280,9 @@ export function FeatureShowcaseScroll({
         scrollLockYRef.current = null;
         // No card is visually centered when the section isn't pinned — pause all backgrounds.
         syncActiveIndex(-1);
+        // Section no longer pinned: cancel any pending/running snap so it can't
+        // fire while the user has already scrolled away.
+        cancelSnap();
         // Do not reset progress when off-screen (e.g. scrolling back up); only remeasure on resize.
         return;
       }
@@ -278,6 +306,67 @@ export function FeatureShowcaseScroll({
     const schedule = () => {
       if (rafRef.current != null) return;
       rafRef.current = requestAnimationFrame(update);
+    };
+
+    /** Nearest anchor progress value (in [0,1]) for the given linear progress. */
+    const nearestAnchorProgress = (p: number) => {
+      const n = cardCentersRef.current.length;
+      if (n < 2) return p;
+      const segCount = n - 1;
+      const idx = Math.max(0, Math.min(segCount, Math.round(p * segCount)));
+      return idx / segCount;
+    };
+
+    const cancelSnap = () => {
+      if (snapRafId != null) {
+        cancelAnimationFrame(snapRafId);
+        snapRafId = null;
+      }
+      if (snapIdleTimeoutId != null) {
+        window.clearTimeout(snapIdleTimeoutId);
+        snapIdleTimeoutId = null;
+      }
+    };
+
+    const startSnap = () => {
+      const track = trackRef.current;
+      if (!track) return;
+      // Only snap while the section is actually pinned.
+      const rect = track.getBoundingClientRect();
+      const vh = window.innerHeight;
+      if (!(rect.top <= 0 && rect.bottom > vh * 0.25)) return;
+
+      const from = horizontalProgressRef.current;
+      if (from <= 0 || from >= 1 - 1e-6) return;
+      const target = nearestAnchorProgress(from);
+      if (Math.abs(target - from) < SNAP_MIN_DELTA) return;
+
+      const startMs = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - startMs) / SNAP_DURATION_MS);
+        // Ease-out cubic: fast start, gentle settle at the anchor.
+        const eased = 1 - Math.pow(1 - t, 3);
+        const next = from + (target - from) * eased;
+        horizontalProgressRef.current = next;
+        const nextTx = txFromProgress(next);
+        setTx(nextTx);
+        syncActiveIndex(centeredIndexForTx(nextTx));
+        if (t < 1) {
+          snapRafId = requestAnimationFrame(step);
+        } else {
+          snapRafId = null;
+        }
+      };
+      snapRafId = requestAnimationFrame(step);
+    };
+
+    /** Reset the idle timer; schedules `startSnap` once the user stops scrubbing. */
+    const scheduleSnap = () => {
+      cancelSnap();
+      snapIdleTimeoutId = window.setTimeout(() => {
+        snapIdleTimeoutId = null;
+        startSnap();
+      }, SNAP_IDLE_MS);
     };
 
     const onScrollClamp = () => {
@@ -310,6 +399,8 @@ export function FeatureShowcaseScroll({
         // rAF-driven update ourselves — otherwise `activeIdx` (centered card)
         // never advances past whatever value it held from the last scroll.
         schedule();
+        // Defer a snap-to-anchor until the user stops scrubbing.
+        scheduleSnap();
         return;
       }
 
@@ -321,6 +412,7 @@ export function FeatureShowcaseScroll({
         e.preventDefault();
         applyProgress(p + dy * WHEEL_TO_PROGRESS);
         schedule();
+        scheduleSnap();
       }
     };
 
@@ -351,6 +443,7 @@ export function FeatureShowcaseScroll({
       window.removeEventListener("wheel", onWheel, { capture: true });
       reduceMotion.removeEventListener("change", update);
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      cancelSnap();
     };
   }, [applyProgress, centeredIndexForTx, measureTxRange, txFromProgress]);
 
