@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ExpandableFeaturePreview } from "./ExpandableFeaturePreview";
+import { ScrollContinueHint } from "./ScrollContinueHint";
 
 export type FeatureCell = {
   title: string;
@@ -24,6 +25,8 @@ type FeatureShowcaseScrollProps = {
   reader: ReaderShowcase;
   features: FeatureCell[];
   onExpand: (src: string, title: string) => void;
+  /** When true (e.g. image lightbox open), hides the scroll hint. */
+  scrollHintSuppressed?: boolean;
 };
 
 const WHEEL_TO_PROGRESS = 0.0012;
@@ -133,8 +136,10 @@ export function FeatureShowcaseScroll({
   reader,
   features,
   onExpand,
+  scrollHintSuppressed = false,
 }: FeatureShowcaseScrollProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [trackInView, setTrackInView] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   const [tx, setTx] = useState(0);
   /** -1 when none are centered (section off-screen); otherwise index into row children. */
@@ -151,6 +156,19 @@ export function FeatureShowcaseScroll({
   const cardCentersRef = useRef<number[]>([]);
   /** Width of a card in px (cards are uniformly sized); used to scale the "centered" threshold. */
   const cardWidthRef = useRef(0);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setTrackInView(entry.isIntersecting);
+      },
+      { root: null, threshold: [0, 0.02, 0.1], rootMargin: "0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const measureTxRange = useCallback(() => {
     const row = rowRef.current;
@@ -255,37 +273,73 @@ export function FeatureShowcaseScroll({
     let snapIdleTimeoutId: number | null = null;
 
     /**
-     * Keep scrollY pinned to the track top until horizontal scrub finishes (p === 1).
+     * Trap scrollY at the track-top pin whenever the row is partially or fully
+     * engaged. Runs synchronously on every scroll (capture phase) so fast
+     * flings that overshoot the pin in a single frame are snapped back before
+     * the user can escape. We intentionally do NOT gate on `inSticky` or on
+     * section visibility here: a big fling can push the section fully offscreen
+     * in one frame, and we still want the clamp to pull the user back.
      *
-     * Runs synchronously on every scroll (capture phase) so fast flings that overshoot
-     * the entire sticky band in a single frame still get snapped back. We intentionally
-     * do NOT gate on `inSticky` here: `rect.bottom > vh * 0.25` can be false after a
-     * big overshoot, which would otherwise release the lock and let the user escape.
+     * `pinScrollY = rect.top + scrollY` is the absolute document scroll
+     * position at which the track's top aligns with the viewport top — the
+     * natural sticky-pin point.
      *
-     * `pinScrollY = rect.top + scrollY` is the absolute document scroll position at
-     * which the track's top edge aligns with the viewport top — i.e., where the
-     * browser would naturally pin the sticky element.
+     * Trap rules:
+     *   - Downward (`y > pinScrollY`): trap while `p < 1`. The user must scrub
+     *     the row to completion before continuing down past the section.
+     *   - Upward   (`y < pinScrollY`): trap while `p > 0`. The user must
+     *     reverse the row back to its start before continuing up past the
+     *     section.
+     *
+     * The wheel handler drives the actual `p` change; this function only
+     * guards against scroll events that would overshoot the pin (fast wheel,
+     * scrollbar drag, keyboard, touch momentum, etc.).
      */
     const clampScrollWhileScrubIncomplete = () => {
       const track = trackRef.current;
       if (!track) return;
       const p = horizontalProgressRef.current;
-      if (p >= 1 - 1e-6) {
-        scrollLockYRef.current = null;
-        return;
-      }
       const rect = track.getBoundingClientRect();
       const y = window.scrollY;
-      const pinScrollY = rect.top + y;
-      // Not yet reached the pin (scrolling down toward section, or scrolled fully above it).
-      if (y < pinScrollY) {
+      const vh = window.innerHeight;
+
+      // When the track does not intersect the viewport vertically, pin math can
+      // go negative (e.g. tall section mostly above the fold). Browsers clamp
+      // scrollTo(negative) to 0 — a sudden jump to the top of the page.
+      if (rect.bottom <= 0 || rect.top >= vh) {
         scrollLockYRef.current = null;
         return;
       }
-      scrollLockYRef.current = pinScrollY;
-      if (y > pinScrollY) {
-        window.scrollTo({ top: pinScrollY, left: 0, behavior: "instant" });
+
+      const pinScrollYRaw = rect.top + y;
+      if (!Number.isFinite(pinScrollYRaw) || pinScrollYRaw < 0) {
+        scrollLockYRef.current = null;
+        return;
       }
+
+      const maxScrollY = Math.max(
+        0,
+        document.documentElement.scrollHeight - vh,
+      );
+      const pinScrollY = Math.min(pinScrollYRaw, maxScrollY);
+
+      // Downward overshoot while scrub is incomplete.
+      if (y > pinScrollY && p < 1 - 1e-6) {
+        scrollLockYRef.current = pinScrollY;
+        window.scrollTo({ top: pinScrollY, left: 0, behavior: "instant" });
+        return;
+      }
+
+      // Upward overshoot while the row is still engaged (past its start).
+      // Forces the wheel handler to reverse the row back to p=0 before the
+      // user can continue scrolling up past the section.
+      if (y < pinScrollY && p > 1e-6) {
+        scrollLockYRef.current = pinScrollY;
+        window.scrollTo({ top: pinScrollY, left: 0, behavior: "instant" });
+        return;
+      }
+
+      scrollLockYRef.current = null;
     };
 
     /** Update active (centered) card index; only triggers state change when it changes. */
@@ -566,6 +620,10 @@ export function FeatureShowcaseScroll({
           </div>
         </div>
       </div>
+
+      <ScrollContinueHint
+        suppress={!trackInView || scrollHintSuppressed}
+      />
     </div>
   );
 }
