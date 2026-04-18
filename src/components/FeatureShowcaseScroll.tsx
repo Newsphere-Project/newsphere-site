@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ExpandableFeaturePreview } from "./ExpandableFeaturePreview";
-import { MediaPlaceholder } from "./MediaPlaceholder";
 
 export type FeatureCell = {
   title: string;
@@ -70,6 +69,20 @@ const SNAP_DURATION_MS = 260;
 const SNAP_MIN_DELTA = 1e-4;
 
 /**
+ * Minimum wheel-input multiplier when the row is exactly at a card anchor.
+ * 1 = no resistance; 0.5 = needs ~2x more scroll distance to depart. Blends
+ * back to 1 (no resistance) across `ANCHOR_RESISTANCE_RADIUS` of the segment.
+ */
+const ANCHOR_RESISTANCE_MIN = 0.5;
+
+/**
+ * Fraction of a segment within which anchor-resistance applies. 0.7 means the
+ * well extends 70% of the way to the next anchor before resistance fully
+ * releases. Smoothstep-blended so the transition is imperceptible.
+ */
+const ANCHOR_RESISTANCE_RADIUS = 0.7;
+
+/**
  * Smoothly warp a linear scrub progress so that card-centered anchor points
  * (`i / (numAnchors - 1)`) act as "sticky" positions: near an anchor the
  * horizontal motion slows, between anchors it accelerates. Anchor values are
@@ -88,6 +101,31 @@ function warpProgress(p: number, numAnchors: number): number {
   const smoothstep = t * t * (3 - 2 * t);
   const eased = STICKINESS * smoothstep + (1 - STICKINESS) * t;
   return segStart + eased * (segEnd - segStart);
+}
+
+/**
+ * Scale wheel input near card anchors so it takes more scrolling to move a
+ * card off-center (or reach a new center). Returns a multiplier in
+ * `[ANCHOR_RESISTANCE_MIN, 1]`: `ANCHOR_RESISTANCE_MIN` right at an anchor,
+ * blending smoothly up to `1` by `ANCHOR_RESISTANCE_RADIUS * segmentLength`
+ * away from the nearest anchor.
+ */
+function anchorResistanceMultiplier(p: number, numAnchors: number): number {
+  if (numAnchors < 2) return 1;
+  const clamped = Math.max(0, Math.min(1, p));
+  const segCount = numAnchors - 1;
+  const segLen = 1 / segCount;
+  const nearestIdx = Math.max(
+    0,
+    Math.min(segCount, Math.round(clamped * segCount)),
+  );
+  const nearestAnchor = nearestIdx / segCount;
+  // Normalized 0→1 distance to nearest anchor within one half-segment.
+  const norm = Math.min(1, Math.abs(clamped - nearestAnchor) / segLen / 0.5);
+  if (norm >= ANCHOR_RESISTANCE_RADIUS) return 1;
+  const t = norm / ANCHOR_RESISTANCE_RADIUS;
+  const smoothstep = t * t * (3 - 2 * t);
+  return ANCHOR_RESISTANCE_MIN + (1 - ANCHOR_RESISTANCE_MIN) * smoothstep;
 }
 
 export function FeatureShowcaseScroll({
@@ -392,9 +430,18 @@ export function FeatureShowcaseScroll({
       const scrollY = window.scrollY;
       const atEnd = p >= 1 - 1e-6;
 
+      // Near a card anchor, scale down the wheel input so it takes more
+      // scrolling to depart center. Layered on top of the visual warp for a
+      // tactile "magnet well" feel.
+      const resistance = anchorResistanceMultiplier(
+        p,
+        cardCentersRef.current.length,
+      );
+      const effectiveDelta = dy * WHEEL_TO_PROGRESS * resistance;
+
       if (dy > 0 && p < 1) {
         e.preventDefault();
-        applyProgress(p + dy * WHEEL_TO_PROGRESS);
+        applyProgress(p + effectiveDelta);
         // `preventDefault` blocks the scroll event, so we must schedule the
         // rAF-driven update ourselves — otherwise `activeIdx` (centered card)
         // never advances past whatever value it held from the last scroll.
@@ -410,7 +457,7 @@ export function FeatureShowcaseScroll({
           return;
         }
         e.preventDefault();
-        applyProgress(p + dy * WHEEL_TO_PROGRESS);
+        applyProgress(p + effectiveDelta);
         schedule();
         scheduleSnap();
       }
@@ -478,15 +525,14 @@ export function FeatureShowcaseScroll({
             className="flex flex-row gap-6 pl-4 sm:pl-6 md:gap-8 md:pl-8 lg:pl-10"
           >
             <div className={cardClass}>
-              <div className="w-full">
-                <MediaPlaceholder
-                  backgroundVideoFrameSec={reader.videoFrameSec}
-                  backgroundVideoObjectPosition={reader.videoObjectPosition}
-                  imageSrc={reader.imageSrc}
-                  label={reader.label}
-                  isActive={activeIdx === 0}
-                />
-              </div>
+              <ExpandableFeaturePreview
+                backgroundVideoFrameSec={reader.videoFrameSec}
+                backgroundVideoObjectPosition={reader.videoObjectPosition}
+                imageSrc={reader.imageSrc}
+                title={reader.title}
+                isActive={activeIdx === 0}
+                onExpand={() => onExpand(reader.imageSrc, reader.title)}
+              />
               <div className="flex flex-col gap-1.5 px-1">
                 <h3 className="text-fg text-lg leading-tight tracking-[-0.02em] max-md:text-base">
                   {reader.title}
