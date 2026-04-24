@@ -43,6 +43,16 @@ const MAX_WHEEL_DELTA_Y_PX = 26;
 const PIN_SCROLL_EPSILON = 2;
 
 /**
+ * Pinned "sticky" band. Uses a few tenths of a px top tolerance: subpixel
+ * `getBoundingClientRect().top` can flutter around 0 at the pin edge, which was
+ * flipping the active card / play-state every frame and read as dither/brightness
+ * flicker on the feature videos.
+ */
+function isTrackInPinnedBand(rect: DOMRect, vh: number) {
+  return rect.top < 0.5 && rect.bottom > vh * 0.25;
+}
+
+/**
  * How strongly each card "sticks" at its centered position. 0 = no stickiness
  * (linear scroll), 1 = fully paused at each anchor. Values around 0.55 read as
  * a confident dwell without feeling stalled.
@@ -386,7 +396,7 @@ export function FeatureShowcaseScroll({
 
       const rect = track.getBoundingClientRect();
       const vh = window.innerHeight;
-      const inSticky = rect.top <= 0 && rect.bottom > vh * 0.25;
+      const inSticky = isTrackInPinnedBand(rect, vh);
 
       if (!inSticky) {
         scrollLockYRef.current = null;
@@ -446,7 +456,7 @@ export function FeatureShowcaseScroll({
       // Only snap while the section is actually pinned.
       const rect = track.getBoundingClientRect();
       const vh = window.innerHeight;
-      if (!(rect.top <= 0 && rect.bottom > vh * 0.25)) return;
+      if (!isTrackInPinnedBand(rect, vh)) return;
 
       const from = horizontalProgressRef.current;
       if (from <= 0 || from >= 1 - 1e-6) return;
@@ -493,8 +503,7 @@ export function FeatureShowcaseScroll({
       if (!track) return;
       const rect = track.getBoundingClientRect();
       const vh = window.innerHeight;
-      const inSticky = rect.top <= 0 && rect.bottom > vh * 0.25;
-      if (!inSticky) return;
+      if (!isTrackInPinnedBand(rect, vh)) return;
 
       const p = horizontalProgressRef.current;
       const dy = clampScrubWheelDeltaY(e);

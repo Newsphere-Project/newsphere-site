@@ -23,9 +23,15 @@ function ScrollToTopOnNavigate() {
   return null;
 }
 
+function routerBasename(): string | undefined {
+  const base = import.meta.env.BASE_URL;
+  if (base === "/") return undefined;
+  return base.replace(/\/$/, "");
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename()}>
       <ScrollToTopOnNavigate />
       <Routes>
         <Route path="/" element={<Home />} />
