@@ -4,12 +4,12 @@ The **public marketing and download site** for [Newsphere](https://newsphere.app
 
 ## Relationship to the desktop app
 
-The **desktop application** (Tauri + React) is developed in a separate repository—commonly named **`Newsfeed`** under the same GitHub owner. That app repo:
+The **desktop application** (Tauri + React) is developed in a separate repository: **[`newsphere`](https://github.com/Newsphere-Project/newsphere)** on GitHub (`Newsphere-Project/newsphere`). That app repo:
 
 - Publishes **macOS `.dmg`** files on branch **`main`** under `public/downloads/macos-arm64/` and `public/downloads/macos-x64/` (see its README and `/.github/workflows/`).
 - Is the **canonical GitHub** link for code, issues, and building on **Windows** (self-build until a Windows release exists).
 
-This site’s build wires download buttons to the **raw GitHub** URLs of those files. Set the app’s `owner/name` with environment variables (below) if your app repo is not `YOUR_ORG/Newsfeed`.
+This site’s build wires download buttons to the **raw GitHub** URLs of those files. Set the app’s `owner/name` with environment variables (below) if your app repo is not **`Newsphere-Project/newsphere`** (or `YOUR_ORG/newsphere` when the site and app share an owner).
 
 ## Features (this repo)
 
@@ -24,14 +24,14 @@ This site’s build wires download buttons to the **raw GitHub** URLs of those f
 | Variable | Purpose |
 |----------|--------|
 | `VITE_BASE_PATH` | Set by CI from `CNAME` / repo name; do not set locally unless you are debugging Pages paths. |
-| `VITE_NEWSFEED_GITHUB_REPO` | `owner/name` of the app repo that hosts `public/downloads/.../Newsphere.dmg` on `main`. **CI default:** `NEWSFEED_GITHUB_REPO` **repository variable**, or `{{ owner }}/Newsfeed` from the site repo’s `github.repository_owner`. |
+| `VITE_NEWSFEED_GITHUB_REPO` | `owner/name` of the app repo that hosts `public/downloads/.../Newsphere.dmg` on `main`. **CI default:** `NEWSFEED_GITHUB_REPO` **repository variable**, or `{{ owner }}/newsphere` from the site repo’s `github.repository_owner`. |
 | `VITE_DOWNLOAD_MACOS_APPLE_SILICON` | Optional full URL; overrides the composed raw URL for the Apple Silicon DMG. |
 | `VITE_DOWNLOAD_MACOS_INTEL` | Optional full URL; overrides the composed raw URL for the Intel DMG. |
 | `VITE_GITHUB_URL` | Full `https://github.com/owner/repo` for “GitHub” links; **set in CI** to the app repository by default. |
 | `VITE_DOWNLOAD_WEB` | Optional web app URL (placeholder in the home template). |
 | `VITE_SUPPORT_EMAIL` | Shown on contact, privacy, and terms. |
 
-For local dev without `.env`, `config.ts` uses placeholders such as `your-org/Newsfeed`—add a `.env` with `VITE_NEWSFEED_GITHUB_REPO=owner/Newsfeed` so download links resolve.
+For local dev without `.env`, `config.ts` defaults to **`Newsphere-Project/newsphere`**. Forks can add `.env` with `VITE_NEWSFEED_GITHUB_REPO=owner/repo` if the app lives elsewhere.
 
 ## Scripts
 

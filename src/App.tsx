@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
+import DownloadLinux from "./pages/DownloadLinux";
 import DownloadWindows from "./pages/DownloadWindows";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -37,6 +38,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/download/windows" element={<DownloadWindows />} />
+        <Route path="/download/linux" element={<DownloadLinux />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />

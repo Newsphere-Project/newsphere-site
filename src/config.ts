@@ -1,10 +1,10 @@
 /**
- * `VITE_NEWSFEED_GITHUB_REPO` is the `owner/name` of the **desktop app** repo
- * that publishes installers under `public/downloads/` on `main` (the Newsfeed / Tauri app).
- * Override per environment or fork as needed. Defaults to this GitHub org/user + `Newsfeed`.
+ * `VITE_NEWSFEED_GITHUB_REPO` is the `owner/name` of the **desktop app** repo on GitHub
+ * that publishes installers under `public/downloads/` on `main` (Tauri app source).
+ * The public repo is **newsphere** (not "Newsfeed"). Override when forking.
  */
 const newsfeedRepo =
-  import.meta.env.VITE_NEWSFEED_GITHUB_REPO ?? "your-org/Newsfeed";
+  import.meta.env.VITE_NEWSFEED_GITHUB_REPO ?? "Newsphere-Project/newsphere";
 
 const rawDownloadsBase = `https://raw.githubusercontent.com/${newsfeedRepo}/main/public/downloads`;
 
@@ -21,8 +21,9 @@ export const DOWNLOAD_URLS = {
 /** In-app route (no host); use with `Link` for the Windows self-build guide. */
 export const SITE_ROUTES = {
   windowsBuild: "/download/windows",
+  linuxBuild: "/download/linux",
 } as const;
 
 export const GITHUB_URL =
   import.meta.env.VITE_GITHUB_URL ??
-  "https://github.com/your-org/newsphere";
+  "https://github.com/Newsphere-Project/newsphere";

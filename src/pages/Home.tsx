@@ -1,6 +1,7 @@
 import { useEffect, useState, type SVGProps } from "react";
 import { Link } from "react-router-dom";
 import { DOWNLOAD_URLS, GITHUB_URL, SITE_ROUTES } from "../config";
+import { useHeroDownloadCta } from "../hooks/use-hero-download-cta";
 import { BetaBadge } from "../components/BetaBadge";
 import { DitherFilterDefs } from "../components/DitherFilterDefs";
 import {
@@ -60,6 +61,25 @@ function WindowsLogoIcon(props: SVGProps<SVGSVGElement>) {
       <path d="M11 0h10v10H11z" />
       <path d="M0 11h10v10H0z" />
       <path d="M11 11h10v10H11z" />
+    </svg>
+  );
+}
+
+function LinuxLogoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="text-fg size-3.5 shrink-0"
+      {...props}
+    >
+      <rect x="2" y="3" width="20" height="18" rx="2" />
+      <path d="M6 8l2 2-2 2M10 12h4" />
     </svg>
   );
 }
@@ -140,7 +160,11 @@ const FEATURE_ROWS: FeatureCell[][] = [
   ],
 ];
 
+const heroDownloadBtnClassName =
+  "bg-primary text-primary-foreground hover:opacity-85 inline-flex cursor-pointer items-center justify-center rounded-full px-3.5 py-2.5 text-sm leading-none tracking-[-0.01em] whitespace-nowrap transition-opacity duration-200";
+
 export default function Home() {
+  const heroDownload = useHeroDownloadCta();
   const [expanded, setExpanded] = useState<{ src: string; title: string } | null>(
     null,
   );
@@ -199,12 +223,24 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 max-md:gap-2.5">
-                <a
-                  href="#downloads"
-                  className="bg-primary text-primary-foreground hover:opacity-85 inline-flex cursor-pointer items-center justify-center rounded-full px-3.5 py-2.5 text-sm leading-none tracking-[-0.01em] whitespace-nowrap transition-opacity duration-200"
-                >
-                  Download for macOS
-                </a>
+                {heroDownload.kind === "windows" ||
+                heroDownload.kind === "linux" ? (
+                  <Link
+                    to={heroDownload.to}
+                    className={heroDownloadBtnClassName}
+                  >
+                    {heroDownload.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={heroDownload.href}
+                    className={heroDownloadBtnClassName}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {heroDownload.label}
+                  </a>
+                )}
                 <GitHubPillLink />
               </div>
             </div>
@@ -238,7 +274,7 @@ export default function Home() {
           Download
         </h2>
 
-        <div className="grid w-full max-w-[1080px] gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full max-w-[1080px] gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
           <a
             href={DOWNLOAD_URLS.macosAppleSilicon}
             className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
@@ -269,7 +305,7 @@ export default function Home() {
           </a>
           <Link
             to={SITE_ROUTES.windowsBuild}
-            className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm sm:col-span-2 lg:col-span-1"
+            className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
           >
             <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
               <WindowsLogoIcon />
@@ -280,6 +316,21 @@ export default function Home() {
               We do not ship a Windows build yet. Step-by-step instructions to
               clone the repo and run <span className="text-fg">tauri build</span>{" "}
               on your machine.
+            </span>
+          </Link>
+          <Link
+            to={SITE_ROUTES.linuxBuild}
+            className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
+          >
+            <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
+              <LinuxLogoIcon />
+              Linux
+            </span>
+            <span className="text-fg text-lg">Build from source</span>
+            <span className="text-fg-secondary text-sm">
+              No AppImage or .deb yet. Clone the repo, install dependencies, and
+              run <span className="text-fg">tauri build</span> for a local
+              bundle.
             </span>
           </Link>
         </div>

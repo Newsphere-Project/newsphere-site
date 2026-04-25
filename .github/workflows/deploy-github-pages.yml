@@ -56,11 +56,11 @@ jobs:
 
       # Raw GitHub URLs for .dmg files live in the desktop app repo (`public/downloads` on main).
       # Optional repo variable `NEWSFEED_GITHUB_REPO` overrides `owner/name` (e.g. `acme/desktop-app`).
-      - name: Resolve Newsfeed app repo for download links
+      - name: Resolve desktop app repo for download links
         id: newsfeed_repo
         run: |
           NF="${{ vars.NEWSFEED_GITHUB_REPO }}"
-          if [ -z "$NF" ]; then NF="${{ github.repository_owner }}/Newsfeed"; fi
+          if [ -z "$NF" ]; then NF="${{ github.repository_owner }}/newsphere"; fi
           echo "value=$NF" >> "$GITHUB_OUTPUT"
 
       - name: Build
