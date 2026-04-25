@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
+import DownloadWindows from "./pages/DownloadWindows";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 
@@ -35,6 +36,7 @@ export default function App() {
       <ScrollToTopOnNavigate />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/download/windows" element={<DownloadWindows />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />

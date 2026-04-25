@@ -54,9 +54,20 @@ jobs:
             echo "value=/${{ github.event.repository.name }}/" >> "$GITHUB_OUTPUT"
           fi
 
+      # Raw GitHub URLs for .dmg files live in the desktop app repo (`public/downloads` on main).
+      # Optional repo variable `NEWSFEED_GITHUB_REPO` overrides `owner/name` (e.g. `acme/desktop-app`).
+      - name: Resolve Newsfeed app repo for download links
+        id: newsfeed_repo
+        run: |
+          NF="${{ vars.NEWSFEED_GITHUB_REPO }}"
+          if [ -z "$NF" ]; then NF="${{ github.repository_owner }}/Newsfeed"; fi
+          echo "value=$NF" >> "$GITHUB_OUTPUT"
+
       - name: Build
         env:
           VITE_BASE_PATH: ${{ steps.vite_base.outputs.value }}
+          VITE_NEWSFEED_GITHUB_REPO: ${{ steps.newsfeed_repo.outputs.value }}
+          VITE_GITHUB_URL: https://github.com/${{ steps.newsfeed_repo.outputs.value }}
         run: npm run build:gh
 
       - name: Upload Pages artifact

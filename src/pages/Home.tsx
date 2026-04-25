@@ -1,5 +1,6 @@
 import { useEffect, useState, type SVGProps } from "react";
-import { DOWNLOAD_URLS, GITHUB_URL } from "../config";
+import { Link } from "react-router-dom";
+import { DOWNLOAD_URLS, GITHUB_URL, SITE_ROUTES } from "../config";
 import { BetaBadge } from "../components/BetaBadge";
 import { DitherFilterDefs } from "../components/DitherFilterDefs";
 import {
@@ -199,7 +200,7 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 max-md:gap-2.5">
                 <a
-                  href={DOWNLOAD_URLS.macos}
+                  href="#downloads"
                   className="bg-primary text-primary-foreground hover:opacity-85 inline-flex cursor-pointer items-center justify-center rounded-full px-3.5 py-2.5 text-sm leading-none tracking-[-0.01em] whitespace-nowrap transition-opacity duration-200"
                 >
                   Download for macOS
@@ -237,33 +238,50 @@ export default function Home() {
           Download
         </h2>
 
-        <div className="grid w-full max-w-[720px] gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-[1080px] gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <a
-            href={DOWNLOAD_URLS.macos}
+            href={DOWNLOAD_URLS.macosAppleSilicon}
             className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
           >
             <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
               <AppleLogoIcon />
               macOS
             </span>
-            <span className="text-fg text-lg">Apple Silicon & Intel</span>
+            <span className="text-fg text-lg">Apple Silicon (M-series)</span>
             <span className="text-fg-secondary text-sm">
-              .dmg installer — drag to Applications.
+              <span className="text-fg">Newsphere.dmg</span> — open the disk
+              image and drag the app to Applications.
             </span>
           </a>
           <a
-            href={DOWNLOAD_URLS.windows}
+            href={DOWNLOAD_URLS.macosIntel}
             className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm"
+          >
+            <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
+              <AppleLogoIcon />
+              macOS
+            </span>
+            <span className="text-fg text-lg">Intel (x64)</span>
+            <span className="text-fg-secondary text-sm">
+              <span className="text-fg">Newsphere.dmg</span> — same install
+              flow as on Apple Silicon; pick the build that matches your Mac.
+            </span>
+          </a>
+          <Link
+            to={SITE_ROUTES.windowsBuild}
+            className="border-border bg-raised flex flex-col gap-3 rounded-2xl border p-6 transition-shadow hover:shadow-sm sm:col-span-2 lg:col-span-1"
           >
             <span className="text-fg-muted bg-hover inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-sm">
               <WindowsLogoIcon />
               Windows
             </span>
-            <span className="text-fg text-lg">Windows 10 & 11</span>
+            <span className="text-fg text-lg">Build from source</span>
             <span className="text-fg-secondary text-sm">
-              Signed installer when available.
+              We do not ship a Windows build yet. Step-by-step instructions to
+              clone the repo and run <span className="text-fg">tauri build</span>{" "}
+              on your machine.
             </span>
-          </a>
+          </Link>
         </div>
 
         <p className="text-fg-muted hidden text-center text-sm">

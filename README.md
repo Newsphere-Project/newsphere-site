@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# Newsphere site
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The **public marketing and download site** for [Newsphere](https://newsphere.app) (or your deployed URL): a Vite + React + TypeScript single-page app. It is usually hosted on **GitHub Pages** and describes the product, legal pages (privacy, terms), contact, and **download** actions for the desktop app.
 
-Currently, two official plugins are available:
+## Relationship to the desktop app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The **desktop application** (Tauri + React) is developed in a separate repository—commonly named **`Newsfeed`** under the same GitHub owner. That app repo:
 
-## React Compiler
+- Publishes **macOS `.dmg`** files on branch **`main`** under `public/downloads/macos-arm64/` and `public/downloads/macos-x64/` (see its README and `/.github/workflows/`).
+- Is the **canonical GitHub** link for code, issues, and building on **Windows** (self-build until a Windows release exists).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This site’s build wires download buttons to the **raw GitHub** URLs of those files. Set the app’s `owner/name` with environment variables (below) if your app repo is not `YOUR_ORG/Newsfeed`.
 
-## Expanding the ESLint configuration
+## Features (this repo)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Landing page: hero, feature showcase, and download section.
+- **macOS** — Two direct `.dmg` links (Apple Silicon and Intel) plus in-page copy.
+- **Windows** — In-app page at `/download/windows` explaining how to **clone the repo and run `tauri build`** (no Windows installer is shipped yet).
+- **GitHub Pages** — Workflow [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) builds and deploys on pushes to `main` (or manual dispatch). Configure the Pages source as **“GitHub Actions”** in the repository settings.
+- **Base path** — If a `CNAME` file is present, the Vite `base` is `/` (custom domain at the site root). Otherwise it is `/<repository-name>/` for `username.github.io/<repo>/`.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Environment variables (Vite)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Variable | Purpose |
+|----------|--------|
+| `VITE_BASE_PATH` | Set by CI from `CNAME` / repo name; do not set locally unless you are debugging Pages paths. |
+| `VITE_NEWSFEED_GITHUB_REPO` | `owner/name` of the app repo that hosts `public/downloads/.../Newsphere.dmg` on `main`. **CI default:** `NEWSFEED_GITHUB_REPO` **repository variable**, or `{{ owner }}/Newsfeed` from the site repo’s `github.repository_owner`. |
+| `VITE_DOWNLOAD_MACOS_APPLE_SILICON` | Optional full URL; overrides the composed raw URL for the Apple Silicon DMG. |
+| `VITE_DOWNLOAD_MACOS_INTEL` | Optional full URL; overrides the composed raw URL for the Intel DMG. |
+| `VITE_GITHUB_URL` | Full `https://github.com/owner/repo` for “GitHub” links; **set in CI** to the app repository by default. |
+| `VITE_DOWNLOAD_WEB` | Optional web app URL (placeholder in the home template). |
+| `VITE_SUPPORT_EMAIL` | Shown on contact, privacy, and terms. |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+For local dev without `.env`, `config.ts` uses placeholders such as `your-org/Newsfeed`—add a `.env` with `VITE_NEWSFEED_GITHUB_REPO=owner/Newsfeed` so download links resolve.
+
+## Scripts
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run build:gh   # `build` + copy `index.html` to `404.html` for GitHub Pages client-side routing
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Roadmap (site)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Update download copy when **Windows** installers ship.
+- Optional **release** channel links (e.g. GitHub Releases) if artifacts move out of `main`.
+- Keep legal and contact information aligned with the product.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## License
+
+Private / your choice; align with the Newsphere product and the desktop app repository.
