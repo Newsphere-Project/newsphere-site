@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Affinity (Serif) document locks while a file is open
+*.af~lock~
