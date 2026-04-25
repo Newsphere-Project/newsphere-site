@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 // import { NoiseOverlay } from "./NoiseOverlay";
 import { BackgroundVideoLayer } from "./BackgroundVideo";
 
@@ -15,6 +16,10 @@ type MediaPlaceholderProps = {
   decorative?: boolean;
   /** Only the screenshot scales on hover; sky frame stays fixed (requires ancestor with `group`). */
   scaleInnerOnHover?: boolean;
+  /** When true, the background plays (loops); otherwise it stays frozen on `backgroundVideoFrameSec`. */
+  isActive?: boolean;
+  /** Optional overlay rendered between the background and the front image (z-[1]). */
+  backgroundOverlay?: ReactNode;
 };
 
 export function MediaPlaceholder({
@@ -26,6 +31,8 @@ export function MediaPlaceholder({
   imageSrc,
   decorative = false,
   scaleInnerOnHover = false,
+  isActive = false,
+  backgroundOverlay,
 }: MediaPlaceholderProps) {
   const imgTween = scaleInnerOnHover ? "media-inner-tween" : "";
 
@@ -38,11 +45,12 @@ export function MediaPlaceholder({
     >
       {/* Static sky was: style={{ backgroundImage: "url(/images/sky.jpg)" }} — now BackgroundVideoLayer */}
       <BackgroundVideoLayer
-        mode="still"
+        mode={isActive ? "loop" : "still"}
         stillObjectPosition={backgroundVideoObjectPosition}
         stillTimeSec={backgroundVideoFrameSec}
       />
       {/* <NoiseOverlay /> */}
+      {backgroundOverlay}
       {imageSrc ? (
         <img
           src={imageSrc}

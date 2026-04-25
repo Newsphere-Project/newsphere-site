@@ -1,6 +1,46 @@
 @import "tailwindcss";
 
+/* Light theme palette aligned with the Newsfeed desktop app (`Newsfeed/src/index.css`). */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.965 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: var(--background);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: var(--background);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.915 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.915 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.915 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
 @layer base {
+  /* Snap so the first rest after the hero has the image fully scrolled away (features top = viewport top). */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-snap-type: y proximity;
+    }
+
+    #hero {
+      scroll-snap-align: start;
+    }
+
+    #features {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+  }
+
   body {
     @apply font-sans font-normal antialiased leading-snug;
   }
@@ -211,15 +251,32 @@
 */
 
 @theme inline {
-  --color-offwhite: #f5f5f4;
-  --color-fg: #08090a;
-  --color-fg-secondary: color-mix(in oklch, var(--color-fg) 72%, white);
-  --color-fg-muted: color-mix(in oklch, var(--color-fg) 52%, white);
-  --color-fg-dim: color-mix(in oklch, var(--color-fg) 42%, white);
-  --color-border: rgba(8, 9, 10, 0.1);
-  --color-border-subtle: rgba(8, 9, 10, 0.06);
-  --color-hover: rgba(8, 9, 10, 0.04);
-  --color-placeholder: #d4d4d4;
-  --color-raised: #ffffff;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Marketing aliases — same greys and text scale as the app */
+  --color-offwhite: var(--background);
+  --color-fg: var(--foreground);
+  --color-fg-secondary: color-mix(in oklch, var(--foreground) 72%, white);
+  --color-fg-muted: color-mix(in oklch, var(--foreground) 52%, white);
+  --color-fg-dim: color-mix(in oklch, var(--foreground) 42%, white);
+  --color-border-subtle: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --color-border-emphasis: color-mix(in oklch, var(--foreground) 15%, transparent);
+  --color-hover: color-mix(in oklch, var(--foreground) 4%, transparent);
+  --color-placeholder: color-mix(in oklch, var(--muted-foreground) 58%, var(--background));
+  --color-raised: oklch(1 0 0);
+  --font-serif:
+    "Instrument Serif", ui-serif, Georgia, Cambria, "Times New Roman", Times,
+    serif;
 }
