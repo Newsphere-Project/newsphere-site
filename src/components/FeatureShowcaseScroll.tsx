@@ -30,14 +30,14 @@ type FeatureShowcaseScrollProps = {
 };
 
 /** Maps vertical wheel distance to horizontal scrub progress (0–1). Lower = slower. */
-const WHEEL_TO_PROGRESS = 0.0002;
+const WHEEL_TO_PROGRESS = 0.00036;
 
 /**
  * Max |vertical wheel delta| (in CSS pixels) applied per event while scrubbing
  * the horizontal row. Fast trackpad flings can report 400+ px/event; that jumps
  * progress and fights pin clamping — cap keeps motion smooth.
  */
-const MAX_WHEEL_DELTA_Y_PX = 26;
+const MAX_WHEEL_DELTA_Y_PX = 30;
 
 /** Pixels: treat scrollY as aligned with the pin when within this of `pinScrollY`. */
 const PIN_SCROLL_EPSILON = 2;
@@ -54,10 +54,11 @@ function isTrackInPinnedBand(rect: DOMRect, vh: number) {
 
 /**
  * How strongly each card "sticks" at its centered position. 0 = no stickiness
- * (linear scroll), 1 = fully paused at each anchor. Values around 0.55 read as
- * a confident dwell without feeling stalled.
+ * (linear scroll), 1 = fully paused at each anchor. Higher values inflate
+ * d(warp)/dp in the middle of each segment (feels like extra trackpad
+ * momentum). Keep low so one gesture crosses the row without feeling sluggish.
  */
-const STICKINESS = 0.55;
+const STICKINESS = 0.12;
 
 /**
  * A card counts as "in the center" (and therefore animates its background) only
@@ -79,13 +80,13 @@ const CENTERED_EXIT_RATIO = 0.35;
  * card anchor. Short enough to feel responsive, long enough not to fight a
  * trackpad user who's still actively scrubbing.
  */
-const SNAP_IDLE_MS = 140;
+const SNAP_IDLE_MS = 100;
 
 /**
  * Duration of the snap-to-anchor animation, in ms. Ease-out cubic is used so
  * the row settles gently rather than decelerating abruptly.
  */
-const SNAP_DURATION_MS = 260;
+const SNAP_DURATION_MS = 200;
 
 /** Ignore snaps that would move progress less than this (already at anchor). */
 const SNAP_MIN_DELTA = 1e-4;
@@ -95,14 +96,13 @@ const SNAP_MIN_DELTA = 1e-4;
  * 1 = no resistance; 0.5 = needs ~2x more scroll distance to depart. Blends
  * back to 1 (no resistance) across `ANCHOR_RESISTANCE_RADIUS` of the segment.
  */
-const ANCHOR_RESISTANCE_MIN = 0.5;
+const ANCHOR_RESISTANCE_MIN = 0.88;
 
 /**
- * Fraction of a segment within which anchor-resistance applies. 0.7 means the
- * well extends 70% of the way to the next anchor before resistance fully
- * releases. Smoothstep-blended so the transition is imperceptible.
+ * Fraction of a segment within which anchor-resistance applies. 0.45 keeps the
+ * “magnet” zone tight so most of the track scrubs at full speed.
  */
-const ANCHOR_RESISTANCE_RADIUS = 0.7;
+const ANCHOR_RESISTANCE_RADIUS = 0.45;
 
 /**
  * Smoothly warp a linear scrub progress so that card-centered anchor points
