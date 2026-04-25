@@ -3,9 +3,10 @@
 # One-time repo setup (Settings → Pages):
 #   - Build and deployment: Source = "GitHub Actions" (not "Deploy from a branch")
 #
-# The site URL for a project page is:
-#   https://<owner>.github.io/<repo>/
-# VITE_BASE_PATH is set to /<repo>/ so assets and the client router work.
+# Base path: https://vite.dev/guide/build.html#public-base-path
+#   - No CNAME: default project URL is https://<owner>.github.io/<repo>/ → base `/<repo>/`
+#   - With CNAME (e.g. newsphere.site): the site is served at the *domain root* → base must be `/`
+#     If you use `/<repo>/` here, JS/CSS requests 404 and the app stays a blank #root.
 
 name: Deploy to GitHub Pages
 
@@ -40,10 +41,22 @@ jobs:
       - name: Install
         run: npm ci
 
+      # When this repo has a CNAME, GitHub Pages serves files at the custom domain
+      # root (e.g. https://newsphere.site/assets/...), not at /<repo>/assets/...
+      - name: Set Vite public base
+        id: vite_base
+        run: |
+          if [ -f CNAME ]; then
+            echo "Vite base: / (custom domain in CNAME — site is at domain root)"
+            echo "value=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "Vite base: /${{ github.event.repository.name }}/ (github.io project page)"
+            echo "value=/${{ github.event.repository.name }}/" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build
         env:
-          # Must match the repo name segment in the GitHub Pages URL.
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_BASE_PATH: ${{ steps.vite_base.outputs.value }}
         run: npm run build:gh
 
       - name: Upload Pages artifact
